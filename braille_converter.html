@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конвертер тексту в шрифт Брайля</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 100px;
+        }
+        textarea:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .control-group label {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        input[type="number"], select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button.secondary {
+            background: #2196F3;
+        }
+        button.secondary:hover {
+            background: #1976D2;
+        }
+        #output {
+            margin-top: 20px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background: #fafafa;
+            min-height: 200px;
+            overflow-x: auto;
+        }
+        .braille-dot { fill: #000; }
+        .braille-empty { fill: none; stroke: #ccc; stroke-width: 0.5; }
+        .letter-label { font-family: Arial, sans-serif; font-size: 10px; fill: #666; }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        .success {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔤 Конвертер тексту в шрифт Брайля</h1>
+        
+        <div class="input-group">
+            <label for="inputText">Введіть текст для конвертації:</label>
+            <textarea id="inputText" placeholder="Введіть ваш текст тут...">Привіт СВІТ! 123</textarea>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Розмір точки:</label>
+                <input type="number" id="dotSize" value="2.5" min="1" max="10" step="0.5">
+            </div>
+            <div class="control-group">
+                <label>Відстань між літерами:</label>
+                <input type="number" id="letterSpacing" value="30" min="20" max="60" step="5">
+            </div>
+            <div class="control-group">
+                <label>Відстань між рядками:</label>
+                <input type="number" id="lineSpacing" value="80" min="60" max="120" step="10">
+            </div>
+            <div class="control-group">
+                <label>Показати підписи:</label>
+                <select id="showLabels">
+                    <option value="true">Так</option>
+                    <option value="false">Ні</option>
+                </select>
+            </div>
+        </div>
+        
+        <button onclick="downloadSVG()" class="secondary">💾 Завантажити SVG</button>
+        <button onclick="copyToClipboard()" class="secondary">📋 Копіювати SVG</button>
+        
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // ПРАВИЛЬНАЯ таблица украинского Брайля
+        // Схема точек: 1 4
+        //             2 5  
+        //             3 6
+        const brailleMap = {
+            // Украинские буквы
+            'а': [1, 0, 0, 0, 0, 0], // ⠁
+            'б': [1, 1, 0, 0, 0, 0], // ⠃
+            'в': [0, 1, 0, 1, 1, 1], // ⠺
+            'г': [1, 1, 0, 1, 1, 0], // ⠛
+            'ґ': [1, 1, 0, 1, 1, 1], // ⠻ (специальный символ для ґ)
+            'д': [1, 0, 0, 1, 1, 0], // ⠙
+            'е': [1, 0, 0, 0, 1, 0], // ⠑
+            'є': [1, 0, 0, 0, 1, 1], // ⠡
+            'ж': [0, 1, 0, 1, 1, 0], // ⠚
+            'з': [1, 0, 1, 0, 1, 1], // ⠵
+            'и': [0, 1, 0, 1, 0, 0], // ⠊
+            'і': [0, 1, 0, 1, 0, 0], // ⠊ (то же что и и)
+            'ї': [1, 0, 0, 1, 1, 1], // ⠹ (специальный символ для ї)
+            'й': [1, 1, 0, 1, 1, 1], // ⠻ (й с краткой)
+            'к': [1, 0, 1, 0, 0, 0], // ⠅
+            'л': [1, 1, 1, 0, 0, 0], // ⠇
+            'м': [1, 0, 1, 1, 0, 0], // ⠍
+            'н': [1, 0, 1, 1, 1, 0], // ⠝
+            'о': [1, 0, 1, 0, 1, 0], // ⠕
+            'п': [1, 1, 1, 1, 0, 0], // ⠏
+            'р': [1, 1, 1, 0, 1, 0], // ⠗
+            'с': [0, 1, 1, 1, 0, 0], // ⠎
+            'т': [0, 1, 1, 1, 1, 0], // ⠞
+            'у': [1, 0, 1, 0, 0, 1], // ⠥
+            'ф': [1, 1, 0, 1, 0, 0], // ⠋
+            'х': [1, 1, 0, 0, 1, 0], // ⠓
+            'ц': [1, 0, 0, 1, 0, 0], // ⠉
+            'ч': [1, 1, 1, 1, 0, 1], // ⠯
+            'ш': [1, 0, 0, 0, 1, 1], // ⠱
+            'щ': [1, 0, 1, 1, 0, 1], // ⠭
+            'ь': [0, 1, 1, 1, 0, 1], // ⠮
+            'ю': [1, 1, 0, 1, 0, 1], // ⠫
+            'я': [1, 1, 0, 1, 0, 1], // ⠫
+            
+            // Русские буквы (дополнительно)
+            'ё': [1, 0, 0, 0, 0, 1], // ⠡
+            'ъ': [1, 1, 1, 0, 1, 1], // ⠯
+            'ы': [0, 1, 1, 1, 0, 1], // ⠾
+            'э': [0, 1, 0, 1, 0, 1], // ⠪
+            
+            // Цифры (с префиксом числа ⠼)
+            '1': [1, 0, 0, 0, 0, 0], // ⠁
+            '2': [1, 1, 0, 0, 0, 0], // ⠃
+            '3': [1, 0, 0, 1, 0, 0], // ⠉
+            '4': [1, 0, 0, 1, 1, 0], // ⠙
+            '5': [1, 0, 0, 0, 1, 0], // ⠑
+            '6': [1, 1, 0, 1, 0, 0], // ⠋
+            '7': [1, 1, 0, 1, 1, 0], // ⠛
+            '8': [1, 1, 0, 0, 1, 0], // ⠓
+            '9': [0, 1, 0, 1, 0, 0], // ⠊
+            '0': [0, 1, 0, 1, 1, 0], // ⠚
+            
+            // Знаки препинания
+            ' ': [0, 0, 0, 0, 0, 0], // пробел
+            '.': [0, 1, 0, 0, 1, 1], // ⠲
+            ',': [0, 1, 0, 0, 0, 0], // ⠂
+            '!': [0, 1, 1, 0, 1, 0], // ⠖
+            '?': [0, 1, 0, 0, 0, 1], // ⠢
+            ':': [0, 1, 0, 0, 1, 0], // ⠒
+            ';': [0, 1, 1, 0, 0, 0], // ⠆
+            '-': [0, 0, 0, 0, 0, 1], // ⠤
+            '—': [0, 0, 0, 0, 0, 1], // ⠤ (тире)
+            '№': [0, 0, 0, 1, 1, 1], // ⠼ (номер)
+            '"': [0, 0, 1, 0, 0, 1], // ⠄ (кавычки)
+            "'": [0, 0, 1, 0, 0, 0], // ⠄ (апостроф)
+            '(': [1, 1, 1, 0, 0, 1], // ⠷
+            ')': [0, 0, 1, 1, 1, 1], // ⠾
+            
+            // Английские буквы (основные)
+            'a': [1, 0, 0, 0, 0, 0], // ⠁
+            'b': [1, 1, 0, 0, 0, 0], // ⠃
+            'c': [1, 0, 0, 1, 0, 0], // ⠉
+            'd': [1, 0, 0, 1, 1, 0], // ⠙
+            'e': [1, 0, 0, 0, 1, 0], // ⠑
+            'f': [1, 1, 0, 1, 0, 0], // ⠋
+            'g': [1, 1, 0, 1, 1, 0], // ⠛
+            'h': [1, 1, 0, 0, 1, 0], // ⠓
+            'i': [0, 1, 0, 1, 0, 0], // ⠊
+            'j': [0, 1, 0, 1, 1, 0], // ⠚
+            'k': [1, 0, 1, 0, 0, 0], // ⠅
+            'l': [1, 1, 1, 0, 0, 0], // ⠇
+            'm': [1, 0, 1, 1, 0, 0], // ⠍
+            'n': [1, 0, 1, 1, 1, 0], // ⠝
+            'o': [1, 0, 1, 0, 1, 0], // ⠕
+            'p': [1, 1, 1, 1, 0, 0], // ⠏
+            'q': [1, 1, 1, 1, 1, 0], // ⠟
+            'r': [1, 1, 1, 0, 1, 0], // ⠗
+            's': [0, 1, 1, 1, 0, 0], // ⠎
+            't': [0, 1, 1, 1, 1, 0], // ⠞
+            'u': [1, 0, 1, 0, 0, 1], // ⠥
+            'v': [1, 1, 1, 0, 0, 1], // ⠧
+            'w': [0, 1, 0, 1, 1, 1], // ⠺
+            'x': [1, 0, 1, 1, 0, 1], // ⠭
+            'y': [1, 0, 1, 1, 1, 1], // ⠽
+            'z': [1, 0, 1, 0, 1, 1]  // ⠵
+        };
+        
+        // Специальные префиксы
+        const specialPrefixes = {
+            capital: [0, 0, 0, 1, 1, 0], // ⠘ - заглавная буква (точки 4,5)
+            number: [0, 0, 1, 1, 1, 1]   // ⠼ - цифра (точки 3,4,5,6)
+        };
+
+        function convertToBraille() {
+            const text = document.getElementById('inputText').value;
+            const dotSize = parseFloat(document.getElementById('dotSize').value);
+            const letterSpacing = parseInt(document.getElementById('letterSpacing').value);
+            const lineSpacing = parseInt(document.getElementById('lineSpacing').value);
+            const showLabels = document.getElementById('showLabels').value === 'true';
+            
+            const lines = text.split('\n');
+            let maxWidth = 0;
+            
+            // Конвертируем текст в массив символов Брайля с префиксами
+            const brailleLines = lines.map(line => {
+                const symbols = [];
+                let inNumberMode = false;
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    const isDigit = /\d/.test(char);
+                    const isUpperCase = /[А-ЯЇЄІҐA-Z]/.test(char);
+                    const isLetter = /[а-яїєіґa-z]/.test(char);
+                    
+                    // Выходим из цифрового режима при любом НЕ-цифровом символе
+                    if (!isDigit && inNumberMode) {
+                        inNumberMode = false;
+                    }
+                    
+                    // Если это цифра и мы не в режиме чисел
+                    if (isDigit && !inNumberMode) {
+                        symbols.push({
+                            pattern: specialPrefixes.number,
+                            label: '№',
+                            originalChar: char
+                        });
+                        inNumberMode = true;
+                    }
+                    
+                    // Если это заглавная буква
+                    if (isUpperCase) {
+                        symbols.push({
+                            pattern: specialPrefixes.capital,
+                            label: '⇈',
+                            originalChar: char
+                        });
+                    }
+                    
+                    // Добавляем основной символ
+                    const lowerChar = char.toLowerCase();
+                    const pattern = brailleMap[lowerChar] || [0, 0, 0, 0, 0, 0];
+                    symbols.push({
+                        pattern: pattern,
+                        label: showLabels ? char : '',
+                        originalChar: char,
+                        isMain: true
+                    });
+                }
+                
+                return symbols;
+            });
+            
+            // Вычисляем максимальную ширину с учетом префиксов
+            brailleLines.forEach(symbols => {
+                maxWidth = Math.max(maxWidth, symbols.length * letterSpacing + 100);
+            });
+            
+            const totalHeight = brailleLines.length * lineSpacing + 100;
+            
+            let svg = `<svg width="${maxWidth}" height="${totalHeight}" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <style>
+                        .braille-dot { fill: #000; }
+                        .braille-empty { fill: none; stroke: #ccc; stroke-width: 0.5; }
+                        .letter-label { font-family: Arial, sans-serif; font-size: 10px; fill: #666; }
+                        .prefix-label { font-family: Arial, sans-serif; font-size: 8px; fill: #999; }
+                    </style>
+                </defs>
+                <rect width="${maxWidth}" height="${totalHeight}" fill="#f9f9f9" stroke="#ddd" stroke-width="1"/>
+            `;
+            
+            brailleLines.forEach((symbols, lineIndex) => {
+                let x = 50;
+                const y = 50 + lineIndex * lineSpacing;
+                
+                symbols.forEach(symbol => {
+                    svg += `<g transform="translate(${x}, ${y})">`;
+                    
+                    // Рисуем 6 точек по стандартной схеме Брайля
+                    // 1 4
+                    // 2 5
+                    // 3 6
+                    const positions = [
+                        [0, 0],                         // точка 1
+                        [0, dotSize * 2 + 3],          // точка 2  
+                        [0, dotSize * 4 + 6],          // точка 3
+                        [dotSize * 2 + 5, 0],          // точка 4
+                        [dotSize * 2 + 5, dotSize * 2 + 3],   // точка 5
+                        [dotSize * 2 + 5, dotSize * 4 + 6]    // точка 6
+                    ];
+                    
+                    for (let dot = 0; dot < 6; dot++) {
+                        const [dotX, dotY] = positions[dot];
+                        const className = symbol.pattern[dot] ? 'braille-dot' : 'braille-empty';
+                        
+                        svg += `<circle cx="${dotX + dotSize}" cy="${dotY + dotSize}" r="${dotSize}" class="${className}"/>`;
+                    }
+                    
+                    // Добавляем подписи
+                    if (showLabels) {
+                        if (symbol.isMain && symbol.originalChar !== ' ') {
+                            svg += `<text x="${dotSize + 2}" y="${dotSize * 6 + 20}" text-anchor="middle" class="letter-label">${symbol.originalChar}</text>`;
+                        } else if (!symbol.isMain) {
+                            svg += `<text x="${dotSize + 2}" y="${dotSize * 6 + 20}" text-anchor="middle" class="prefix-label">${symbol.label}</text>`;
+                        }
+                    }
+                    
+                    svg += '</g>';
+                    x += letterSpacing;
+                });
+            });
+            
+            svg += '</svg>';
+            
+            document.getElementById('output').innerHTML = svg;
+        }
+        
+        function downloadSVG() {
+            const svgContent = document.getElementById('output').innerHTML;
+            if (!svgContent) {
+                alert('Спочатку введіть текст для конвертації!');
+                return;
+            }
+            
+            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'braille_text.svg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function copyToClipboard() {
+            const svgContent = document.getElementById('output').innerHTML;
+            if (!svgContent) {
+                alert('Спочатку введіть текст для конвертації!');
+                return;
+            }
+            
+            navigator.clipboard.writeText(svgContent).then(() => {
+                alert('SVG код скопійовано в буфер обміну!');
+            }).catch(() => {
+                alert('Помилка копіювання. Спробуйте завантажити файл.');
+            });
+        }
+        
+        // Автоматична конвертація при введенні тексту
+        document.getElementById('inputText').addEventListener('input', convertToBraille);
+        document.getElementById('dotSize').addEventListener('input', convertToBraille);
+        document.getElementById('letterSpacing').addEventListener('input', convertToBraille);
+        document.getElementById('lineSpacing').addEventListener('input', convertToBraille);
+        document.getElementById('showLabels').addEventListener('change', convertToBraille);
+        
+        // Автоматична конвертація при завантаженні
+        window.addEventListener('load', convertToBraille);
+    </script>
+</body>
+</html>
