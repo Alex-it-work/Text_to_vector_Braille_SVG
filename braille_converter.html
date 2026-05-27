@@ -12,11 +12,11 @@
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
         textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; resize: vertical; min-height: 100px; box-sizing: border-box; }
         textarea:focus { border-color: #4CAF50; outline: none; }
-        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .control-group { display: flex; flex-direction: column; gap: 5px; }
-        .control-group label { font-size: 14px; margin-bottom: 3px; font-weight: bold; }
-        .control-group small { font-size: 11px; color: #666; font-style: italic; }
-        input[type="number"], select { padding: 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        .controls { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; align-items: end; }
+        .control-group { display: flex; flex-direction: column; }
+        .control-group label { font-size: 13px; margin-bottom: 6px; font-weight: bold; min-height: 32px; display: flex; align-items: flex-end; }
+        .control-group small { font-size: 11px; color: #888; font-style: italic; margin-top: 4px; }
+        input[type="number"], select { padding: 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 14px; width: 100%; box-sizing: border-box; height: 38px; }
         .stepper { display: flex; align-items: stretch; gap: 4px; }
         .stepper input[type="number"] { flex: 1; text-align: center; -moz-appearance: textfield; }
         .stepper input[type="number"]::-webkit-outer-spin-button,
@@ -41,13 +41,13 @@
             <textarea id="inputText">Привіт СВІТ! 123</textarea>
         </div>
         <div class="controls">
-            <div class="control-group"><label>Діаметр точки (мм):</label><div class="stepper"><button type="button" onclick="stepValue('dotDiameter',-1)">−</button><input type="number" id="dotDiameter" value="1.7" min="1.0" max="1.7" step="0.1"><button type="button" onclick="stepValue('dotDiameter',1)">+</button></div><small>1.0 - 1.7 мм</small></div>
-            <div class="control-group"><label>Вертикальний інтервал a (мм):</label><div class="stepper"><button type="button" onclick="stepValue('verticalSpacing',-1)">−</button><input type="number" id="verticalSpacing" value="2.8" min="2.2" max="2.8" step="0.1"><button type="button" onclick="stepValue('verticalSpacing',1)">+</button></div><small>2.2 - 2.8 мм</small></div>
-            <div class="control-group"><label>Горизонтальний інтервал b (мм):</label><div class="stepper"><button type="button" onclick="stepValue('horizontalSpacing',-1)">−</button><input type="number" id="horizontalSpacing" value="2.8" min="2.0" max="2.8" step="0.1"><button type="button" onclick="stepValue('horizontalSpacing',1)">+</button></div><small>2.0 - 2.8 мм</small></div>
-            <div class="control-group"><label>Відстань між символами p (мм):</label><div class="stepper"><button type="button" onclick="stepValue('symbolSpacing',-1)">−</button><input type="number" id="symbolSpacing" value="6.8" min="5.1" max="6.8" step="0.1"><button type="button" onclick="stepValue('symbolSpacing',1)">+</button></div><small>5.1 - 6.8 мм</small></div>
-            <div class="control-group"><label>Міжрядковий інтервал q (мм):</label><div class="stepper"><button type="button" onclick="stepValue('lineSpacing',-1)">−</button><input type="number" id="lineSpacing" value="15.0" min="10.0" max="15.0" step="0.1"><button type="button" onclick="stepValue('lineSpacing',1)">+</button></div><small>10.0 - 15.0 мм</small></div>
+            <div class="control-group"><label>Діаметр точки (мм):</label><div class="stepper"><button type="button" onclick="stepValue('dotDiameter',-1)">−</button><input type="number" id="dotDiameter" value="1.2" min="1.0" max="1.7" step="0.1"><button type="button" onclick="stepValue('dotDiameter',1)">+</button></div><small>1.0 - 1.7 мм</small></div>
+            <div class="control-group"><label>Вертикальний інтервал a (мм):</label><div class="stepper"><button type="button" onclick="stepValue('verticalSpacing',-1)">−</button><input type="number" id="verticalSpacing" value="2.5" min="2.2" max="2.8" step="0.1"><button type="button" onclick="stepValue('verticalSpacing',1)">+</button></div><small>2.2 - 2.8 мм</small></div>
+            <div class="control-group"><label>Горизонтальний інтервал b (мм):</label><div class="stepper"><button type="button" onclick="stepValue('horizontalSpacing',-1)">−</button><input type="number" id="horizontalSpacing" value="2.5" min="2.0" max="2.8" step="0.1"><button type="button" onclick="stepValue('horizontalSpacing',1)">+</button></div><small>2.0 - 2.8 мм</small></div>
+            <div class="control-group"><label>Відстань між символами p (мм):</label><div class="stepper"><button type="button" onclick="stepValue('symbolSpacing',-1)">−</button><input type="number" id="symbolSpacing" value="6.2" min="5.1" max="6.8" step="0.1"><button type="button" onclick="stepValue('symbolSpacing',1)">+</button></div><small>5.1 - 6.8 мм</small></div>
+            <div class="control-group"><label>Міжрядковий інтервал q (мм):</label><div class="stepper"><button type="button" onclick="stepValue('lineSpacing',-1)">−</button><input type="number" id="lineSpacing" value="10.0" min="10.0" max="15.0" step="0.1"><button type="button" onclick="stepValue('lineSpacing',1)">+</button></div><small>10.0 - 15.0 мм</small></div>
             <div class="control-group"><label>Вільна зона x (мм):</label><div class="stepper"><button type="button" onclick="stepValue('freeZone',-1)">−</button><input type="number" id="freeZone" value="6.0" min="6.0" max="10.0" step="0.1"><button type="button" onclick="stepValue('freeZone',1)">+</button></div><small>мін. 6.0 мм</small></div>
-            <div class="control-group"><label>Показати підписи:</label><select id="showLabels"><option value="true">Так</option><option value="false">Ні</option></select></div>
+            <div class="control-group"><label>Показати підписи:</label><select id="showLabels"><option value="true">Так</option><option value="false">Ні</option></select><small>&nbsp;</small></div>
         </div>
         <div class="buttons-row">
             <button class="btn-standard" onclick="resetToStandard()">🔄 Стандартні розміри</button>
@@ -85,7 +85,7 @@
             '6':[1,1,0,1,0,0],'7':[1,1,0,1,1,0],'8':[1,1,0,0,1,0],'9':[0,1,0,1,0,0],'0':[0,1,0,1,1,0],
             ' ':[0,0,0,0,0,0],'.':[0,1,0,0,1,1],',':[0,1,0,0,0,0],'!':[0,1,1,0,1,0],'?':[0,1,0,0,0,1],
             ':':[0,1,0,0,1,0],';':[0,1,1,0,0,0],'-':[0,0,1,0,0,1],'—':[0,0,1,0,0,1],'№':[0,0,0,1,1,1],
-            '"':[0,1,1,0,0,1],'"':[0,0,1,0,1,1],"'":[0,0,1,0,0,0],'(':[0,1,1,0,1,1],')':[0,1,1,0,1,1],
+            '\u201C':[0,1,1,0,0,1],'\u201D':[0,0,1,0,1,1],"'":[0,0,1,0,0,0],'(':[0,1,1,0,1,1],')':[0,1,1,0,1,1],
             'a':[1,0,0,0,0,0],'b':[1,1,0,0,0,0],'c':[1,0,0,1,0,0],'d':[1,0,0,1,1,0],'e':[1,0,0,0,1,0],
             'f':[1,1,0,1,0,0],'g':[1,1,0,1,1,0],'h':[1,1,0,0,1,0],'i':[0,1,0,1,0,0],'j':[0,1,0,1,1,0],
             'k':[1,0,1,0,0,0],'l':[1,1,1,0,0,0],'m':[1,0,1,1,0,0],'n':[1,0,1,1,1,0],'o':[1,0,1,0,1,0],
@@ -106,9 +106,10 @@
             const showLabels = document.getElementById('showLabels').value === 'true';
 
             const lines = text.split('\n');
+            let quoteCounter = 0;
             const brailleLines = lines.map(line => {
                 const symbols = [];
-                let inNumberMode = false, quoteCounter = 0;
+                let inNumberMode = false;
                 for (let i = 0; i < line.length; i++) {
                     const char = line[i];
                     const isDigit = /\d/.test(char);
@@ -117,7 +118,7 @@
                     if (isDigit && !inNumberMode) { symbols.push({pattern:specialPrefixes.number,label:'№',originalChar:char}); inNumberMode = true; }
                     if (isUpperCase) symbols.push({pattern:specialPrefixes.capital,label:'⇈',originalChar:char});
                     let actualChar = char;
-                    if (char === '"') { actualChar = (quoteCounter % 2 === 0) ? '"' : '"'; quoteCounter++; }
+                    if (char === '"') { actualChar = (quoteCounter % 2 === 0) ? '\u201C' : '\u201D'; quoteCounter++; }
                     const pattern = brailleMap[actualChar.toLowerCase()] || [0,0,0,0,0,0];
                     symbols.push({pattern, label: showLabels ? actualChar : '', originalChar: actualChar, isMain: true});
                 }
