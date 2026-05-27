@@ -17,6 +17,13 @@
         .control-group label { font-size: 14px; margin-bottom: 3px; font-weight: bold; }
         .control-group small { font-size: 11px; color: #666; font-style: italic; }
         input[type="number"], select { padding: 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        .stepper { display: flex; align-items: stretch; gap: 4px; }
+        .stepper input[type="number"] { flex: 1; text-align: center; -moz-appearance: textfield; }
+        .stepper input[type="number"]::-webkit-outer-spin-button,
+        .stepper input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .stepper button { padding: 0 12px; font-size: 18px; font-weight: bold; background: #607d8b; color: white; border: none; border-radius: 3px; cursor: pointer; min-width: 36px; line-height: 1; user-select: none; }
+        .stepper button:hover { background: #455a64; }
+        .stepper button:active { background: #37474f; }
         .buttons-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         button { color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: opacity 0.2s; }
         button:hover { opacity: 0.85; }
@@ -34,12 +41,12 @@
             <textarea id="inputText">Привіт СВІТ! 123</textarea>
         </div>
         <div class="controls">
-            <div class="control-group"><label>Діаметр точки (мм):</label><input type="number" id="dotDiameter" value="1.7" min="1.0" max="1.7" step="0.1"><small>1.0 - 1.7 мм</small></div>
-            <div class="control-group"><label>Вертикальний інтервал a (мм):</label><input type="number" id="verticalSpacing" value="2.8" min="2.2" max="2.8" step="0.1"><small>2.2 - 2.8 мм</small></div>
-            <div class="control-group"><label>Горизонтальний інтервал b (мм):</label><input type="number" id="horizontalSpacing" value="2.8" min="2.0" max="2.8" step="0.1"><small>2.0 - 2.8 мм</small></div>
-            <div class="control-group"><label>Відстань між символами p (мм):</label><input type="number" id="symbolSpacing" value="6.8" min="5.1" max="6.8" step="0.1"><small>5.1 - 6.8 мм</small></div>
-            <div class="control-group"><label>Міжрядковий інтервал q (мм):</label><input type="number" id="lineSpacing" value="15.0" min="10.0" max="15.0" step="0.1"><small>10.0 - 15.0 мм</small></div>
-            <div class="control-group"><label>Вільна зона x (мм):</label><input type="number" id="freeZone" value="6.0" min="6.0" max="10.0" step="0.1"><small>мін. 6.0 мм</small></div>
+            <div class="control-group"><label>Діаметр точки (мм):</label><div class="stepper"><button type="button" onclick="stepValue('dotDiameter',-1)">−</button><input type="number" id="dotDiameter" value="1.7" min="1.0" max="1.7" step="0.1"><button type="button" onclick="stepValue('dotDiameter',1)">+</button></div><small>1.0 - 1.7 мм</small></div>
+            <div class="control-group"><label>Вертикальний інтервал a (мм):</label><div class="stepper"><button type="button" onclick="stepValue('verticalSpacing',-1)">−</button><input type="number" id="verticalSpacing" value="2.8" min="2.2" max="2.8" step="0.1"><button type="button" onclick="stepValue('verticalSpacing',1)">+</button></div><small>2.2 - 2.8 мм</small></div>
+            <div class="control-group"><label>Горизонтальний інтервал b (мм):</label><div class="stepper"><button type="button" onclick="stepValue('horizontalSpacing',-1)">−</button><input type="number" id="horizontalSpacing" value="2.8" min="2.0" max="2.8" step="0.1"><button type="button" onclick="stepValue('horizontalSpacing',1)">+</button></div><small>2.0 - 2.8 мм</small></div>
+            <div class="control-group"><label>Відстань між символами p (мм):</label><div class="stepper"><button type="button" onclick="stepValue('symbolSpacing',-1)">−</button><input type="number" id="symbolSpacing" value="6.8" min="5.1" max="6.8" step="0.1"><button type="button" onclick="stepValue('symbolSpacing',1)">+</button></div><small>5.1 - 6.8 мм</small></div>
+            <div class="control-group"><label>Міжрядковий інтервал q (мм):</label><div class="stepper"><button type="button" onclick="stepValue('lineSpacing',-1)">−</button><input type="number" id="lineSpacing" value="15.0" min="10.0" max="15.0" step="0.1"><button type="button" onclick="stepValue('lineSpacing',1)">+</button></div><small>10.0 - 15.0 мм</small></div>
+            <div class="control-group"><label>Вільна зона x (мм):</label><div class="stepper"><button type="button" onclick="stepValue('freeZone',-1)">−</button><input type="number" id="freeZone" value="6.0" min="6.0" max="10.0" step="0.1"><button type="button" onclick="stepValue('freeZone',1)">+</button></div><small>мін. 6.0 мм</small></div>
             <div class="control-group"><label>Показати підписи:</label><select id="showLabels"><option value="true">Так</option><option value="false">Ні</option></select></div>
         </div>
         <div class="buttons-row">
@@ -52,6 +59,18 @@
     </div>
     <script>
         function parseNumber(v) { return parseFloat(String(v).replace(',', '.')); }
+
+        function stepValue(id, direction) {
+            const el = document.getElementById(id);
+            const step = parseFloat(el.step) || 1;
+            const min = parseFloat(el.min);
+            const max = parseFloat(el.max);
+            let val = parseNumber(el.value) + direction * step;
+            if (!isNaN(min)) val = Math.max(min, val);
+            if (!isNaN(max)) val = Math.min(max, val);
+            el.value = val.toFixed(1);
+            convertToBraille();
+        }
 
         const brailleMap = {
             'а':[1,0,0,0,0,0],'б':[1,1,0,0,0,0],'в':[0,1,0,1,1,1],'г':[1,1,0,1,1,0],'ґ':[1,1,0,1,1,1],
