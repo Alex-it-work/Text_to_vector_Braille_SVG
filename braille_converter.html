@@ -84,15 +84,26 @@
             '1':[1,0,0,0,0,0],'2':[1,1,0,0,0,0],'3':[1,0,0,1,0,0],'4':[1,0,0,1,1,0],'5':[1,0,0,0,1,0],
             '6':[1,1,0,1,0,0],'7':[1,1,0,1,1,0],'8':[1,1,0,0,1,0],'9':[0,1,0,1,0,0],'0':[0,1,0,1,1,0],
             ' ':[0,0,0,0,0,0],'.':[0,1,0,0,1,1],',':[0,1,0,0,0,0],'!':[0,1,1,0,1,0],'?':[0,1,0,0,0,1],
-            ':':[0,1,0,0,1,0],';':[0,1,1,0,0,0],'-':[0,0,1,0,0,1],'—':[0,0,1,0,0,1],'№':[0,0,0,1,1,1],
+            ':':[0,1,0,0,1,0],';':[0,1,1,0,0,0],'-':[0,0,1,0,0,1],'—':[0,0,1,0,0,1],'№':[1,0,1,1,1,0],
             '\u201C':[0,1,1,0,0,1],'\u201D':[0,0,1,0,1,1],"'":[0,0,1,0,0,0],'(':[0,1,1,0,1,1],')':[0,1,1,0,1,1],
+            '+':[0,1,1,0,1,0],'=':[0,1,1,0,1,1],'@':[1,0,0,1,0,1],'&':[1,1,1,1,0,1],'/':[0,0,1,1,0,0],
+            '[':[1,1,1,0,1,1],']':[0,1,1,1,1,1],'{':[1,1,1,1,0,1],'}':[1,0,1,1,1,1],'\\':[1,0,0,0,0,1],
             'a':[1,0,0,0,0,0],'b':[1,1,0,0,0,0],'c':[1,0,0,1,0,0],'d':[1,0,0,1,1,0],'e':[1,0,0,0,1,0],
             'f':[1,1,0,1,0,0],'g':[1,1,0,1,1,0],'h':[1,1,0,0,1,0],'i':[0,1,0,1,0,0],'j':[0,1,0,1,1,0],
             'k':[1,0,1,0,0,0],'l':[1,1,1,0,0,0],'m':[1,0,1,1,0,0],'n':[1,0,1,1,1,0],'o':[1,0,1,0,1,0],
             'p':[1,1,1,1,0,0],'q':[1,1,1,1,1,0],'r':[1,1,1,0,1,0],'s':[0,1,1,1,0,0],'t':[0,1,1,1,1,0],
             'u':[1,0,1,0,0,1],'v':[1,1,1,0,0,1],'w':[0,1,0,1,1,1],'x':[1,0,1,1,0,1],'y':[1,0,1,1,1,1],'z':[1,0,1,0,1,1]
         };
-        const specialPrefixes = { capital:[0,0,0,1,1,0], number:[0,0,1,1,1,1] };
+        const specialPrefixes = {
+            number:[0,0,1,1,1,1],   // цифровий знак (3,4,5,6)
+            capUkr:[0,0,0,1,1,0],   // велика українська буква (4,5)
+            capLat:[0,0,0,1,0,1],   // велика латиниця (4,6)
+            latin:[0,0,0,0,0,1]     // мала латиниця (6)
+        };
+        const multiCellMap = {
+            '%':[[0,0,1,1,1,1],[0,1,0,1,1,0],[0,0,1,0,1,1]],
+            '*':[[0,0,1,0,1,0],[0,0,1,0,1,0],[0,0,1,0,1,0]]
+        };
 
         function convertToBraille() {
             const text = document.getElementById('inputText').value;
@@ -109,18 +120,37 @@
             let quoteCounter = 0;
             const brailleLines = lines.map(line => {
                 const symbols = [];
-                let inNumberMode = false;
+                let inNumberMode = false, latinMode = false;
                 for (let i = 0; i < line.length; i++) {
                     const char = line[i];
                     const isDigit = /\d/.test(char);
-                    const isUpperCase = /[А-ЯЇЄІҐA-Z]/.test(char);
+                    const isLatin = /[A-Za-z]/.test(char);
+                    const isLatinUpper = /[A-Z]/.test(char);
+                    const isCyrUpper = /[А-ЯЇЄІҐ]/.test(char);
                     if (!isDigit && inNumberMode) inNumberMode = false;
+                    if (!isLatin) latinMode = false;
                     if (isDigit && !inNumberMode) { symbols.push({pattern:specialPrefixes.number,label:'№',originalChar:char}); inNumberMode = true; }
-                    if (isUpperCase) symbols.push({pattern:specialPrefixes.capital,label:'⇈',originalChar:char});
+                    if (isLatin) {
+                        if (isLatinUpper) {
+                            symbols.push({pattern:specialPrefixes.capLat,label:'⇈L',originalChar:char});
+                            latinMode = true;
+                        } else if (!latinMode) {
+                            symbols.push({pattern:specialPrefixes.latin,label:'L',originalChar:char});
+                            latinMode = true;
+                        }
+                    } else if (isCyrUpper) {
+                        symbols.push({pattern:specialPrefixes.capUkr,label:'⇈',originalChar:char});
+                    }
                     let actualChar = char;
                     if (char === '"') { actualChar = (quoteCounter % 2 === 0) ? '\u201C' : '\u201D'; quoteCounter++; }
-                    const pattern = brailleMap[actualChar.toLowerCase()] || [0,0,0,0,0,0];
-                    symbols.push({pattern, label: showLabels ? actualChar : '', originalChar: actualChar, isMain: true});
+                    if (multiCellMap[actualChar]) {
+                        multiCellMap[actualChar].forEach((cellPattern, ci) => {
+                            symbols.push({pattern: cellPattern, label: (showLabels && ci === 0) ? actualChar : '', originalChar: ci === 0 ? actualChar : ' ', isMain: true});
+                        });
+                    } else {
+                        const pattern = brailleMap[actualChar.toLowerCase()] || [0,0,0,0,0,0];
+                        symbols.push({pattern, label: showLabels ? actualChar : '', originalChar: actualChar, isMain: true});
+                    }
                 }
                 return symbols;
             });
@@ -129,33 +159,37 @@
             brailleLines.forEach(s => { maxWidth = Math.max(maxWidth, s.length * p + x0 * 2); });
             const totalHeight = brailleLines.length * q + x0 * 2 + (showLabels ? 20 : 0);
 
-            let svg = `<svg width="${maxWidth}" height="${totalHeight}" xmlns="http://www.w3.org/2000/svg">
-                <rect width="${maxWidth}" height="${totalHeight}" fill="#f9f9f9" stroke="#ddd"/>`;
-
+            let emptyDots = '', filledDots = '', labels = '';
+            const pos = [[0,0],[0,a],[0,a*2],[b,0],[b,a],[b,a*2]];
             brailleLines.forEach((symbols, li) => {
                 let cx = x0;
                 const cy = x0 + li * q;
                 symbols.forEach(sym => {
-                    svg += `<g transform="translate(${cx},${cy})">`;
-                    const pos = [[0,0],[0,a],[0,a*2],[b,0],[b,a],[b,a*2]];
                     for (let d = 0; d < 6; d++) {
                         const [dx,dy] = pos[d];
+                        const ccx = cx + dx + dotRadius;
+                        const ccy = cy + dy + dotRadius;
                         if (sym.pattern[d]) {
-                            svg += `<circle cx="${dx+dotRadius}" cy="${dy+dotRadius}" r="${dotRadius}" fill="#000"/>`;
+                            filledDots += `<circle cx="${ccx}" cy="${ccy}" r="${dotRadius}" fill="#000"/>`;
                         } else {
-                            svg += `<circle cx="${dx+dotRadius}" cy="${dy+dotRadius}" r="${dotRadius}" fill="none" stroke="#ccc" stroke-width="0.5"/>`;
+                            emptyDots += `<circle cx="${ccx}" cy="${ccy}" r="${dotRadius}" fill="none" stroke="#ccc" stroke-width="0.5"/>`;
                         }
                     }
                     if (showLabels && sym.originalChar !== ' ') {
                         const fill = sym.isMain ? '#666' : '#999';
                         const fs = sym.isMain ? 10 : 8;
-                        svg += `<text x="${b/2+dotRadius}" y="${a*2+dotRadius*2+15}" text-anchor="middle" font-family="Arial" font-size="${fs}" fill="${fill}">${sym.label || sym.originalChar}</text>`;
+                        labels += `<text x="${cx+b/2+dotRadius}" y="${cy+a*2+dotRadius*2+15}" text-anchor="middle" font-family="Arial" font-size="${fs}" fill="${fill}">${sym.label || sym.originalChar}</text>`;
                     }
-                    svg += '</g>';
                     cx += p;
                 });
             });
-            svg += '</svg>';
+
+            const svg = `<svg width="${maxWidth}" height="${totalHeight}" xmlns="http://www.w3.org/2000/svg">
+                <rect width="${maxWidth}" height="${totalHeight}" fill="#f9f9f9" stroke="#ddd"/>
+                <g id="empty-dots">${emptyDots}</g>
+                <g id="filled-dots">${filledDots}</g>${showLabels ? `
+                <g id="labels">${labels}</g>` : ''}
+            </svg>`;
             document.getElementById('output').innerHTML = svg;
         }
 
